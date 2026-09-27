@@ -81,7 +81,7 @@
     letter-spacing:0.01em;margin:0;line-height:1.15;}
   .brand p{margin:2px 0 0;font-size:10.5px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;}
 
-  .hint{font-size:11px;color:var(--text);margin:12px 0 18px;line-height:1.55;
+  .hint{font-size:11px;color:var(--text);margin:12px 0 12px;line-height:1.55;
     padding:9px 11px;border:1px solid var(--panel-border);border-radius:10px;background:rgba(255,255,255,0.02);}
 
   .upload-row{display:flex;gap:8px;margin-bottom:18px;}
@@ -194,7 +194,7 @@
   .export-btn:hover{ background:rgba(91,140,255,0.34); }
   .export-btn:active{ transform:scale(0.98); }
 
-  .export-size-row{display:flex; align-items:center; gap:6px; margin-top:14px; margin-bottom:12px;}
+  .export-size-row{display:flex; align-items:center; gap:6px; margin-top:14px; margin-bottom:0;}
   .export-size-row input[type=number]{
     width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); border-radius:8px;
     color:var(--text); font-family:'Inter',sans-serif; font-size:11.5px; padding:6px 7px; text-align:center;
@@ -309,7 +309,7 @@
     <div class="row"><span>조명 세기</span><span class="val" id="sun-val">40</span></div>
     <div class="gauge" id="gauge-sun"><div class="gauge-fill"></div><div class="gauge-handle"></div></div>
   </div>
-  <div class="global-control">
+  <div class="global-control" style="margin-bottom:0;">
     <div class="row"><span>반사광 색상</span></div>
     <div class="swatch-row">
       <div class="swatch color-preview-swatch" id="swatch-fill-color" style="background:#88a6ff;" title="반사광 색상">
