@@ -200,6 +200,9 @@
     color:var(--text); font-family:'Inter',sans-serif; font-size:11.5px; padding:6px 7px; text-align:center;
   }
   .export-size-row input[type=number]:focus{ outline:none; border-color:var(--accent-soft); }
+  .export-size-row input[type=number]{ -moz-appearance:textfield; appearance:textfield; }
+  .export-size-row input[type=number]::-webkit-inner-spin-button,
+  .export-size-row input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0; }
   .export-size-row span.x{ color:var(--text-faint); font-size:11px; flex:0 0 auto; }
   .export-size-row span.unit{ color:var(--text); font-size:10px; flex:0 0 auto; }
 
@@ -280,7 +283,7 @@
     </div>
   </div>
 
-  <div class="hint">이미지를 업로드하면 비율에 맞춰 큐브 크기가 자동으로 변형됩니다. 썸네일을 다른 면으로 드래그하면 이미지가 서로 교체됩니다. 프리뷰는 드래그로 회전, 휠로 확대/축소됩니다.</div>
+  <div class="hint">이미지를 업로드하면 비율에 맞춰 큐브 크기가 자동으로 변형되고, 이미지 썸네일을 다른 면으로 드래그하면 이미지가 서로 교체됩니다. 프리뷰는 드래그로 회전, 휠로 확대/축소됩니다.</div>
 
   <div class="upload-row">
     <button class="upload-btn" id="btn-sides">옆면 4장 업로드<small>앞·오른쪽·뒤·왼쪽 순</small></button>
