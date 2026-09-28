@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Orbit Package</title>
+<title>Box Package Builder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -365,6 +365,7 @@
   var BASE = 3.2;
   var CORNER_SEGS = 12;
 
+  var CORNER_MAX = 5; // corner roundness slider is limited to 0–5
   var DEFAULTS = { gloss:52, corner:0, sun:40, fillColor:'#88a6ff' };
 
   var state = {};
@@ -487,14 +488,15 @@
     gaugeEl.querySelector('.gauge-fill').style.width = val + '%';
     gaugeEl.querySelector('.gauge-handle').style.left = val + '%';
   }
-  function bindGlobalGauge(gaugeEl, valEl, initial, onChange){
-    setGaugeVisual(gaugeEl, initial);
+  function bindGlobalGauge(gaugeEl, valEl, initial, onChange, max){
+    max = max || 100;
+    setGaugeVisual(gaugeEl, initial / max * 100);
     var dragging = false;
     function update(clientX){
       var rect = gaugeEl.getBoundingClientRect();
-      var v = Math.round(((clientX - rect.left) / rect.width) * 100);
-      v = Math.max(0, Math.min(100, v));
-      setGaugeVisual(gaugeEl, v);
+      var v = Math.round(((clientX - rect.left) / rect.width) * max);
+      v = Math.max(0, Math.min(max, v));
+      setGaugeVisual(gaugeEl, v / max * 100);
       valEl.textContent = v;
       onChange(v);
     }
@@ -518,13 +520,13 @@
   var sunValEl = document.getElementById('sun-val');
 
   bindGlobalGauge(gaugeGlossEl, glossValEl, globalGloss, function(v){ globalGloss = v; applyGlossToAll(v); });
-  bindGlobalGauge(gaugeCornerEl, cornerValEl, cornerRoundness, function(v){ cornerRoundness = v; rebuildGeometry(); });
+  bindGlobalGauge(gaugeCornerEl, cornerValEl, cornerRoundness, function(v){ cornerRoundness = v; rebuildGeometry(); }, CORNER_MAX);
   bindGlobalGauge(gaugeSunEl, sunValEl, sunLevel, function(v){ sunLevel = v; applySunLevel(v); });
 
   document.getElementById('btn-reset-global').addEventListener('click', function(){
     globalGloss = DEFAULTS.gloss; cornerRoundness = DEFAULTS.corner; sunLevel = DEFAULTS.sun;
     setGaugeVisual(gaugeGlossEl, globalGloss); glossValEl.textContent = globalGloss; applyGlossToAll(globalGloss);
-    setGaugeVisual(gaugeCornerEl, cornerRoundness); cornerValEl.textContent = cornerRoundness; rebuildGeometry();
+    setGaugeVisual(gaugeCornerEl, cornerRoundness / CORNER_MAX * 100); cornerValEl.textContent = cornerRoundness; rebuildGeometry();
     setGaugeVisual(gaugeSunEl, sunLevel); sunValEl.textContent = sunLevel; applySunLevel(sunLevel);
     key2.color.set(DEFAULTS.fillColor);
     fillColorInput.value = DEFAULTS.fillColor;
@@ -804,19 +806,26 @@
     var groups = [];
     var idxCount = 0;
 
-    function pushWallQuad(x0,z0,u0, x1,z1,u1, mat){
-      var dx = x1-x0, dz = z1-z0;
-      var len = Math.sqrt(dx*dx+dz*dz);
-      var nx, nz;
-      if (len < 1e-6){
-        var ang = Math.atan2(z0,x0);
-        nx = Math.cos(ang); nz = Math.sin(ang);
-      } else {
-        nx = -dz/len; nz = dx/len;
-      }
+    // nAng0/nAng1 (optional): outward normal angles at each end, for smooth shading on curved corners.
+    function pushWallQuad(x0,z0,u0, x1,z1,u1, mat, nAng0, nAng1){
       var base = positions.length/3;
       positions.push(x0,-hh,z0,  x1,-hh,z1,  x1,hh,z1,  x0,hh,z0);
-      for (var k=0;k<4;k++) normals.push(nx,0,nz);
+      if (nAng0 !== undefined && nAng1 !== undefined){
+        var n0x = Math.cos(nAng0), n0z = Math.sin(nAng0);
+        var n1x = Math.cos(nAng1), n1z = Math.sin(nAng1);
+        normals.push(n0x,0,n0z,  n1x,0,n1z,  n1x,0,n1z,  n0x,0,n0z);
+      } else {
+        var dx = x1-x0, dz = z1-z0;
+        var len = Math.sqrt(dx*dx+dz*dz);
+        var nx, nz;
+        if (len < 1e-6){
+          var ang = Math.atan2(z0,x0);
+          nx = Math.cos(ang); nz = Math.sin(ang);
+        } else {
+          nx = -dz/len; nz = dx/len;
+        }
+        for (var k=0;k<4;k++) normals.push(nx,0,nz);
+      }
       uvs.push(u0,0, u1,0, u1,1, u0,1);
       indices.push(base,base+1,base+2, base,base+2,base+3);
       groups.push({ start: idxCount, count: 6, materialIndex: mat });
@@ -849,14 +858,14 @@
         var a1 = c.start - ((i+1)/segs)*(Math.PI/2);
         var x0 = c.cx + radius*Math.cos(a0), z0 = c.cz + radius*Math.sin(a0);
         var x1 = c.cx + radius*Math.cos(a1), z1 = c.cz + radius*Math.sin(a1);
-        pushWallQuad(x0, z0, 1, x1, z1, 1, c.faceBefore);
+        pushWallQuad(x0, z0, 1, x1, z1, 1, c.faceBefore, a0, a1);
       }
       for (var j=half;j<segs;j++){
         var b0 = c.start - (j/segs)*(Math.PI/2);
         var b1 = c.start - ((j+1)/segs)*(Math.PI/2);
         var y0 = c.cx + radius*Math.cos(b0), w0 = c.cz + radius*Math.sin(b0);
         var y1 = c.cx + radius*Math.cos(b1), w1 = c.cz + radius*Math.sin(b1);
-        pushWallQuad(y0, w0, 0, y1, w1, 0, c.faceAfter);
+        pushWallQuad(y0, w0, 0, y1, w1, 0, c.faceAfter, b0, b1);
       }
     });
 
